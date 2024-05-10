@@ -19,6 +19,10 @@ import java.util.TimerTask;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
 
 public class BatteryTrayApp {
 	//一時格納用変数の定義
@@ -288,6 +292,34 @@ public class BatteryTrayApp {
         }, 0, update_interval);
     }
 
+	private void openSettingsDialog() {
+		JFrame settingsFrame = new JFrame("Settings");
+		settingsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		settingsFrame.setSize(300, 200);
+
+		// RGBの各値を入力するためのスピンボックスを作成します。
+		SpinnerNumberModel redModel = new SpinnerNumberModel(0, 0, 255, 1);
+		JSpinner redSpinner = new JSpinner(redModel);
+		SpinnerNumberModel greenModel = new SpinnerNumberModel(0, 0, 255, 1);
+		JSpinner greenSpinner = new JSpinner(greenModel);
+		SpinnerNumberModel blueModel = new SpinnerNumberModel(0, 0, 255, 1);
+		JSpinner blueSpinner = new JSpinner(blueModel);
+
+		// スピンボックスをパネルに追加します。
+		JPanel panel = new JPanel();
+		panel.add(new JLabel("Red:"));
+		panel.add(redSpinner);
+		panel.add(new JLabel("Green:"));
+		panel.add(greenSpinner);
+		panel.add(new JLabel("Blue:"));
+		panel.add(blueSpinner);
+
+		// パネルをフレームに追加します。
+		settingsFrame.add(panel);
+
+		settingsFrame.setVisible(true);
+	}
+
     private void createTrayIcon() {
         if (SystemTray.isSupported()) {
             // get the SystemTray instance
@@ -302,6 +334,10 @@ public class BatteryTrayApp {
             java.awt.MenuItem closeItem = new java.awt.MenuItem("Close");
             closeItem.addActionListener(closeListener);
             popup.add(closeItem);
+
+			java.awt.MenuItem settingsItem = new java.awt.MenuItem("Settings");
+			settingsItem.addActionListener(e -> openSettingsDialog());
+			popup.add(settingsItem);
 
             /// ... add other items
 
