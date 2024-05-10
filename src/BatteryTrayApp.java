@@ -21,13 +21,26 @@ import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
 public class BatteryTrayApp {
-	//バッテリ残量の一時格納用変数の定義
-	int temp_batteryLevel = 0;
+	//一時格納用変数の定義
+	int temp_BatteryLevel = 0;
+	boolean temp_isPluggedIn = false;
 	
 	private static final int CANVAS_SIZE = 16;
 
     private SystemTray tray;
     private TrayIcon trayIcon;
+    
+    //数値格納用のキャンバスの配列を定義
+    int[][] num_canvas;
+    
+	//カウンタ変数の定義
+    int cnt = 0;
+
+	//バッテリ残量を0であらかじめ初期化(12回に1回更新する関係で初期化しないとundefinedとなる)
+    int battery = 0;
+
+	//電源接続状態更新間隔の定義(ms), バッテリ残量更新間隔はこの6倍
+    int update_interval = 5000;
     
 	static int[][][] points = {
 			{
@@ -238,6 +251,25 @@ public class BatteryTrayApp {
 			{1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1},
 			{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 			};
+
+	static int[][] battery_error = {
+			{0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0},
+			{0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0},
+			{0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0},
+			{0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0},
+			{0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0},
+			{0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0},
+			{0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0},
+			{0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0},
+			{0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0},
+			{0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0},
+			{0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0},
+			{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+			{0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0},
+			{0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0},
+			{0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0},
+			{0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0}
+	};
  
     public static void main(String[] args) {
         new BatteryTrayApp().start();
@@ -246,14 +278,14 @@ public class BatteryTrayApp {
     public void start() {
         createTrayIcon();
 
-        // Update the battery level every minute
+        // Update the battery level
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
                 updateTray();
             }
-        }, 0, 5000);
+        }, 0, update_interval);
     }
 
     private void createTrayIcon() {
@@ -310,6 +342,7 @@ public class BatteryTrayApp {
         return batteryLevel;
     }
 
+    //配列を水平方向に結合する関数
     public static int[][] concatenate(int[][] a, int[][] b) {
         int[][] result = new int[a.length][a[0].length + b[0].length];
 
@@ -338,20 +371,51 @@ public class BatteryTrayApp {
     
     private void updateTray() {
         if (tray != null && trayIcon != null) {
-            String batteryLevel = getBatteryLevel();
-            trayIcon.setToolTip("Battery Level: " + batteryLevel + "%");
-//            trayIcon.setImage(createImage(batteryLevel));
+        	
+        	if(cnt % 6 == 0) {
+	            String batteryLevel = getBatteryLevel();
+	            
+	            //バッテリ残量が数値で受け取れた場合はint型に変換
+	            if (batteryLevel.matches("-?\\d+")) {
+		            trayIcon.setToolTip("Battery Level: " + batteryLevel + "%");
+		            battery = Integer.parseInt(batteryLevel);
+		            
+		            //ReLu関数と同様にして例外をはじく
+		            if(battery < 0) battery = 0;
+		            else if(battery > 100) battery = 100;
+		            cnt = 0;
+//		            System.out.println("batteryLevel updated");
+		           
+	            }
+		            
+	            //取得できなかった場合終了
+	            else {
+					num_canvas = battery_error.clone();
+					boolean isPluggedIn = false;
+					boolean isError = true;
+					trayIcon.setImage(createCanvas(num_canvas, battery, isPluggedIn, isError));
+					return;
+				}
+        	}
+            cnt++;
+
+			boolean isError = false;
+
+            //電源接続状態を確認
+            boolean isPluggedIn;
+            try {
+            	isPluggedIn = isPluggedIn();
+//            	System.out.println(cnt + "isPluggedIn updated");
+            } catch(Exception e) {
+            	isPluggedIn = false;
+            }
             
-            int battery = Integer.parseInt(batteryLevel);
-            if (battery != temp_batteryLevel) {
-	            temp_batteryLevel = battery;
-	            
-	            //ReLu関数と同様にして例外をはじく
-	            if(battery < 0) battery = 0;
-	            else if(battery > 100) battery = 100;
-	            
-	            //数値格納用のキャンバスの配列を定義
-	            int[][] num_canvas;
+            
+            if (battery != temp_BatteryLevel || temp_isPluggedIn != isPluggedIn) {
+            	//バッテリ残量, 電源接続状態のいずれかに変化があった場合再描画
+	            temp_BatteryLevel = battery;
+	            temp_isPluggedIn = isPluggedIn;
+
 	            
 	//            デバッグ用バッテリ残量を指定
 	//            battery = 100;
@@ -365,29 +429,22 @@ public class BatteryTrayApp {
 	            	if (tens_place == 0) tens_place = 10;
 	            	num_canvas = concatenate(points[tens_place], points[ones_place]);
 	            }
-	            trayIcon.setImage(createCanvas(num_canvas, battery));
+	            trayIcon.setImage(createCanvas(num_canvas, battery, isPluggedIn, isError));
+//	            System.out.println("Canvas updated");
 	        }
         }
     }
     
-    public static BufferedImage createCanvas(int[][] num_canvas, int battery) {
+    public static BufferedImage createCanvas(int[][] num_canvas, int battery, boolean isPluggedIn, boolean isError) {
         // Create a transparent canvas
         BufferedImage canvas = new BufferedImage(CANVAS_SIZE, CANVAS_SIZE, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = canvas.createGraphics();
-        
-        
-        //電源接続状態を確認
-        boolean isPluggedIn;
-        try {
-        	isPluggedIn = isPluggedIn();
-        } catch(Exception e) {
-        	isPluggedIn = false;
-        }
         
         //バッテリ残量に応じて色を変更
         
         //電源接続時にはバッテリ残量をシアンで表示
         if (isPluggedIn == true) g2d.setColor(Color.CYAN);
+		else if (isError == true) g2d.setColor(Color.RED);
         else {
         	if (battery > 80) g2d.setColor(Color.GREEN);
         	else if(battery > 50) g2d.setColor(Color.WHITE);
