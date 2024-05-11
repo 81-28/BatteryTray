@@ -18,6 +18,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.imageio.ImageIO;
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -293,32 +294,38 @@ public class BatteryTrayApp {
     }
 
 	private void openSettingsDialog() {
+	    final JSpinner[][] colorSpinners;
+		final String[] eachBatteryLevel = {"~20%        ", "~50%        ", "~80%        ", "~100%      ", "PluggedIn"};
 		JFrame settingsFrame = new JFrame("Settings");
 		settingsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		settingsFrame.setSize(300, 200);
+		settingsFrame.setLayout(new BoxLayout(settingsFrame.getContentPane(), BoxLayout.Y_AXIS));  // レイアウトをBoxLayoutに変更
 
-		// RGBの各値を入力するためのスピンボックスを作成します。
-		SpinnerNumberModel redModel = new SpinnerNumberModel(0, 0, 255, 1);
-		JSpinner redSpinner = new JSpinner(redModel);
-		SpinnerNumberModel greenModel = new SpinnerNumberModel(0, 0, 255, 1);
-		JSpinner greenSpinner = new JSpinner(greenModel);
-		SpinnerNumberModel blueModel = new SpinnerNumberModel(0, 0, 255, 1);
-		JSpinner blueSpinner = new JSpinner(blueModel);
+		colorSpinners = new JSpinner[5][3];
 
-		// スピンボックスをパネルに追加します。
-		JPanel panel = new JPanel();
-		panel.add(new JLabel("Red:"));
-		panel.add(redSpinner);
-		panel.add(new JLabel("Green:"));
-		panel.add(greenSpinner);
-		panel.add(new JLabel("Blue:"));
-		panel.add(blueSpinner);
+		// 各バッテリーレベルの色を設定するためのスピンボックスを作成します。
+		for (int i = 0; i < 5; i++) {
+			JPanel panel = new JPanel();
+			panel.add(new JLabel(eachBatteryLevel[i] + " - "));
 
-		// パネルをフレームに追加します。
-		settingsFrame.add(panel);
+			colorSpinners[i][0] = new JSpinner(new SpinnerNumberModel(0, 0, 255, 1));
+			panel.add(new JLabel("R"));
+			panel.add(colorSpinners[i][0]);
 
+			colorSpinners[i][1] = new JSpinner(new SpinnerNumberModel(0, 0, 255, 1));
+			panel.add(new JLabel("G"));
+			panel.add(colorSpinners[i][1]);
+
+			colorSpinners[i][2] = new JSpinner(new SpinnerNumberModel(0, 0, 255, 1));
+			panel.add(new JLabel("B"));
+			panel.add(colorSpinners[i][2]);
+
+			settingsFrame.add(panel);  // パネルをフレームに追加
+		}
+
+		settingsFrame.pack();
 		settingsFrame.setVisible(true);
 	}
+
 
     private void createTrayIcon() {
         if (SystemTray.isSupported()) {
