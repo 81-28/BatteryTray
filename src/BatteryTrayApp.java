@@ -28,6 +28,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
@@ -349,6 +350,8 @@ public class BatteryTrayApp {
 			}
 
 			writeProperties(colorList);
+			JOptionPane.showMessageDialog(settingsFrame, "Restart the program to apply changes", "Info", JOptionPane.INFORMATION_MESSAGE);
+			settingsFrame.dispose();
 		});
 
     // ボタンをフレームに追加します。
@@ -435,12 +438,13 @@ public class BatteryTrayApp {
 
 			java.awt.MenuItem settingsItem = new java.awt.MenuItem("Settings");
 			settingsItem.addActionListener(e -> openSettingsDialog());
+			// settingsItem.addActionListener(closeListener);
 			popup.add(settingsItem);
 
             java.awt.MenuItem closeItem = new java.awt.MenuItem("Close");
             closeItem.addActionListener(closeListener);
             popup.add(closeItem);
-			
+
             /// ... add other items
 
             // construct a TrayIcon
