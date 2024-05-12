@@ -293,8 +293,24 @@ public class BatteryTrayApp {
 			{0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0},
 			{0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0}
 	};
- 
+	
+
+	private static final String LOCK_PATH = System.getProperty("user.home") + File.separator + "Battery.lock";
     public static void main(String[] args) {
+		File lockFile = new File(LOCK_PATH);
+        if (lockFile.exists()) {
+            // ロックファイルが存在する場合、すでにアプリケーションが起動していると判断します。
+            System.out.println("アプリケーションはすでに起動しています。");
+            System.exit(1);
+        }
+
+        try {
+            // ロックファイルを作成します。
+            lockFile.createNewFile();
+            lockFile.deleteOnExit();  // アプリケーション終了時にロックファイルを削除します。
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
         new BatteryTrayApp().start();
     }
 
