@@ -62,7 +62,7 @@ public class BatteryTrayApp {
 									   "PluggedIn", };
 	final static String[] BatteryConfig = {"upto20", "upto50", "upto80", "upto100", "Plugged"};
 
-	static int[][] colorList = readArrayFromProperties();
+	static int[][] colorList = readProperties();
     
 	static int[][][] points = {
 			{
@@ -311,9 +311,6 @@ public class BatteryTrayApp {
     }
 
 	private void openSettingsDialog() {
-
-
-	    
 		JFrame settingsFrame = new JFrame("Settings");
 		settingsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		settingsFrame.setLayout(new BoxLayout(settingsFrame.getContentPane(), BoxLayout.Y_AXIS));  // レイアウトをBoxLayoutに変更
@@ -351,7 +348,7 @@ public class BatteryTrayApp {
 				colorList[i][2] = blue;
 			}
 
-			writeArrayToProperties(colorList);
+			writeProperties(colorList);
 		});
 
     // ボタンをフレームに追加します。
@@ -361,7 +358,8 @@ public class BatteryTrayApp {
 		settingsFrame.setVisible(true);
 	}
 
-    public static void writeArrayToProperties(int[][] array) {
+	//Configファイルに書き出し
+    public static void writeProperties(int[][] array) {
         Map<String, String> map = new LinkedHashMap<>();
 
         for (int i = 0; i < array.length; i++) {
@@ -387,7 +385,8 @@ public class BatteryTrayApp {
         }
     }
 
-	public static int[][] readArrayFromProperties() {
+	//Configファイルから読み出し
+	public static int[][] readProperties() {
 		int[][] DefaultColor = {
 			{255, 143,  63},
 			{255, 255,   0},
@@ -411,6 +410,7 @@ public class BatteryTrayApp {
 						array[i][j] = Integer.parseInt(rowValues[j]);
 					}
 				}
+			//Configファイルがない場合はデフォルトの値を使用
 			} else {
 				array = DefaultColor;
 			}
@@ -433,14 +433,14 @@ public class BatteryTrayApp {
             // create a popup menu
             PopupMenu popup = new PopupMenu();
 
-            java.awt.MenuItem closeItem = new java.awt.MenuItem("Close");
-            closeItem.addActionListener(closeListener);
-            popup.add(closeItem);
-
 			java.awt.MenuItem settingsItem = new java.awt.MenuItem("Settings");
 			settingsItem.addActionListener(e -> openSettingsDialog());
 			popup.add(settingsItem);
 
+            java.awt.MenuItem closeItem = new java.awt.MenuItem("Close");
+            closeItem.addActionListener(closeListener);
+            popup.add(closeItem);
+			
             /// ... add other items
 
             // construct a TrayIcon
