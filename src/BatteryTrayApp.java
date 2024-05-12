@@ -354,8 +354,17 @@ public class BatteryTrayApp {
 			settingsFrame.dispose();
 		});
 
-    // ボタンをフレームに追加します。
-    settingsFrame.add(saveButton);
+		JButton closeButton = new JButton("Close");
+		closeButton.addActionListener(e -> {
+			settingsFrame.dispose();
+		});
+
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.add(saveButton);
+		buttonPanel.add(closeButton);
+
+		// ボタンをフレームに追加します。
+		settingsFrame.add(buttonPanel);
 
 		settingsFrame.pack();
 		settingsFrame.setVisible(true);
