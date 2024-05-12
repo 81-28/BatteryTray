@@ -295,22 +295,22 @@ public class BatteryTrayApp {
 	};
 	
 
-	private static final String LOCK_PATH = System.getProperty("user.home") + File.separator + "Battery.lock";
+//	private static final String LOCK_PATH = System.getProperty("user.home") + File.separator + "Battery.lock";
     public static void main(String[] args) {
-		File lockFile = new File(LOCK_PATH);
-        if (lockFile.exists()) {
-            // ロックファイルが存在する場合、すでにアプリケーションが起動していると判断します。
-            System.out.println("アプリケーションはすでに起動しています。");
-            System.exit(1);
-        }
-
-        try {
-            // ロックファイルを作成します。
-            lockFile.createNewFile();
-            lockFile.deleteOnExit();  // アプリケーション終了時にロックファイルを削除します。
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+//		File lockFile = new File(LOCK_PATH);
+//        if (lockFile.exists()) {
+//            // ロックファイルが存在する場合、すでにアプリケーションが起動していると判断します。
+//            System.out.println("アプリケーションはすでに起動しています。");
+//            System.exit(1);
+//        }
+//
+//        try {
+//            // ロックファイルを作成します。
+//            lockFile.createNewFile();
+//            lockFile.deleteOnExit();  // アプリケーション終了時にロックファイルを削除します。
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
         new BatteryTrayApp().start();
     }
 
@@ -523,8 +523,10 @@ public class BatteryTrayApp {
     }
     
     public static boolean isPluggedIn() throws IOException {
-        Runtime runtime = Runtime.getRuntime();
-        Process process = runtime.exec("WMIC Path Win32_Battery Get BatteryStatus");
+
+        ProcessBuilder processBuilder = new ProcessBuilder("WMIC", "Path", "Win32_Battery", "Get", "BatteryStatus");
+        Process process = processBuilder.start();
+
         BufferedReader systemOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
         String line;
