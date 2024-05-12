@@ -337,7 +337,7 @@ public class BatteryTrayApp {
 		}
 
 		// "Save"ボタンを作成します。
-		JButton saveButton = new JButton("Save");
+		JButton saveButton = new JButton("  Save  ");
 		saveButton.addActionListener(e -> {
 			// ボタンがクリックされたときにRGBの各値を出力します。
 			for (int i = 0; i < 5; i++) {
@@ -354,19 +354,20 @@ public class BatteryTrayApp {
 			settingsFrame.dispose();
 		});
 
-		JButton closeButton = new JButton("Close");
-		closeButton.addActionListener(e -> {
+		JButton cancelButton = new JButton("Cancel");
+		cancelButton.addActionListener(e -> {
 			settingsFrame.dispose();
 		});
 
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.add(saveButton);
-		buttonPanel.add(closeButton);
+		buttonPanel.add(cancelButton);
 
 		// ボタンをフレームに追加します。
 		settingsFrame.add(buttonPanel);
 
 		settingsFrame.pack();
+		settingsFrame.setResizable(false);
 		settingsFrame.setVisible(true);
 	}
 
