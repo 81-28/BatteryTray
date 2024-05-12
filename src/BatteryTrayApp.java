@@ -12,13 +12,26 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.imageio.ImageIO;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
 
 public class BatteryTrayApp {
 	//一時格納用変数の定義
@@ -41,6 +54,16 @@ public class BatteryTrayApp {
 
 	//電源接続状態更新間隔の定義(ms), バッテリ残量更新間隔はこの6倍
     int update_interval = 5000;
+
+	final JSpinner[][] colorSpinners = new JSpinner[5][3];
+	final String[] eachBatteryLevel = {"~20%         ", 
+									   "~50%         ", 
+									   "~80%         ", 
+									   "~100%      ", 
+									   "PluggedIn", };
+	final static String[] BatteryConfig = {"upto20", "upto50", "upto80", "upto100", "Plugged"};
+
+	static int[][] colorList = readProperties();
     
 	static int[][][] points = {
 			{
@@ -233,7 +256,7 @@ public class BatteryTrayApp {
     		}
 	};
 	
-	static int[][] battery_100 = {
+	static int[][] FullBattery = {
 			{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 			{1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1},
 			{1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1},
@@ -252,7 +275,7 @@ public class BatteryTrayApp {
 			{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 			};
 
-	static int[][] battery_error = {
+	static int[][] ErrorBattery = {
 			{0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0},
 			{0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0},
 			{0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0},
@@ -270,8 +293,24 @@ public class BatteryTrayApp {
 			{0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0},
 			{0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0}
 	};
- 
+	
+
+	private static final String LOCK_PATH = System.getProperty("user.home") + File.separator + "Battery.lock";
     public static void main(String[] args) {
+		File lockFile = new File(LOCK_PATH);
+        if (lockFile.exists()) {
+            // ロックファイルが存在する場合、すでにアプリケーションが起動していると判断します。
+            System.out.println("アプリケーションはすでに起動しています。");
+            System.exit(1);
+        }
+
+        try {
+            // ロックファイルを作成します。
+            lockFile.createNewFile();
+            lockFile.deleteOnExit();  // アプリケーション終了時にロックファイルを削除します。
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
         new BatteryTrayApp().start();
     }
 
@@ -288,6 +327,130 @@ public class BatteryTrayApp {
         }, 0, update_interval);
     }
 
+	private void openSettingsDialog() {
+		JFrame settingsFrame = new JFrame("Settings");
+		settingsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		settingsFrame.setLayout(new BoxLayout(settingsFrame.getContentPane(), BoxLayout.Y_AXIS));  // レイアウトをBoxLayoutに変更
+
+		// 各バッテリーレベルの色を設定するためのスピンボックスを作成します。
+		for (int i = 0; i < 5; i++) {
+			JPanel panel = new JPanel();
+			panel.add(new JLabel(eachBatteryLevel[i] + " - "));
+
+			colorSpinners[i][0] = new JSpinner(new SpinnerNumberModel(colorList[i][0], 0, 255, 1));
+			panel.add(new JLabel("R"));
+			panel.add(colorSpinners[i][0]);
+
+			colorSpinners[i][1] = new JSpinner(new SpinnerNumberModel(colorList[i][1], 0, 255, 1));
+			panel.add(new JLabel("G"));
+			panel.add(colorSpinners[i][1]);
+
+			colorSpinners[i][2] = new JSpinner(new SpinnerNumberModel(colorList[i][2], 0, 255, 1));
+			panel.add(new JLabel("B"));
+			panel.add(colorSpinners[i][2]);
+
+			settingsFrame.add(panel);  // パネルをフレームに追加
+		}
+
+		// "Save"ボタンを作成します。
+		JButton saveButton = new JButton("  Save  ");
+		saveButton.addActionListener(e -> {
+			// ボタンがクリックされたときにRGBの各値を出力します。
+			for (int i = 0; i < 5; i++) {
+				int red = (Integer) colorSpinners[i][0].getValue();
+				int green = (Integer) colorSpinners[i][1].getValue();
+				int blue = (Integer) colorSpinners[i][2].getValue();
+				colorList[i][0] = red;
+				colorList[i][1] = green;
+				colorList[i][2] = blue;
+			}
+
+			writeProperties(colorList);
+			JOptionPane.showMessageDialog(settingsFrame, "Restart the program to apply changes", "Info", JOptionPane.INFORMATION_MESSAGE);
+			settingsFrame.dispose();
+		});
+
+		JButton cancelButton = new JButton("Cancel");
+		cancelButton.addActionListener(e -> {
+			settingsFrame.dispose();
+		});
+
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.add(saveButton);
+		buttonPanel.add(cancelButton);
+
+		// ボタンをフレームに追加します。
+		settingsFrame.add(buttonPanel);
+
+		settingsFrame.pack();
+		settingsFrame.setResizable(false);
+		settingsFrame.setVisible(true);
+	}
+
+	//Configファイルに書き出し
+    public static void writeProperties(int[][] array) {
+        Map<String, String> map = new LinkedHashMap<>();
+
+        for (int i = 0; i < array.length; i++) {
+            String rowKey = BatteryConfig[i];
+            String rowValue = "";
+            for (int j = 0; j < array[i].length; j++) {
+                rowValue += Integer.toString(array[i][j]);
+                if (j < array[i].length - 1) {
+                    rowValue += ",";
+                }
+            }
+            map.put(rowKey, rowValue);
+        }
+
+        try {
+            FileOutputStream fos = new FileOutputStream("Config.properties");
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                fos.write((entry.getKey() + "=" + entry.getValue() + "\n").getBytes());
+            }
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+	//Configファイルから読み出し
+	public static int[][] readProperties() {
+		int[][] DefaultColor = {
+			{255, 143,  63},
+			{255, 255,   0},
+			{255, 255, 255},
+			{  0, 255,   0},
+			{  0, 255, 255}
+		};
+
+		int[][] array = new int[5][3];
+		Properties prop = new Properties();
+	
+		try {
+			File f = new File("Config.properties");
+			if(f.exists() && !f.isDirectory()) { 
+				prop.load(new FileInputStream("Config.properties"));
+	
+				for (int i = 0; i < array.length; i++) {
+					String rowKey = BatteryConfig[i];
+					String[] rowValues = prop.getProperty(rowKey).split(",");
+					for (int j = 0; j < array[i].length; j++) {
+						array[i][j] = Integer.parseInt(rowValues[j]);
+					}
+				}
+			//Configファイルがない場合はデフォルトの値を使用
+			} else {
+				array = DefaultColor;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	
+		return array;
+	}
+	
+
     private void createTrayIcon() {
         if (SystemTray.isSupported()) {
             // get the SystemTray instance
@@ -298,6 +461,11 @@ public class BatteryTrayApp {
 
             // create a popup menu
             PopupMenu popup = new PopupMenu();
+
+			java.awt.MenuItem settingsItem = new java.awt.MenuItem("Settings");
+			settingsItem.addActionListener(e -> openSettingsDialog());
+			// settingsItem.addActionListener(closeListener);
+			popup.add(settingsItem);
 
             java.awt.MenuItem closeItem = new java.awt.MenuItem("Close");
             closeItem.addActionListener(closeListener);
@@ -390,7 +558,7 @@ public class BatteryTrayApp {
 		            
 	            //取得できなかった場合終了
 	            else {
-					num_canvas = battery_error.clone();
+					num_canvas = ErrorBattery.clone();
 					boolean isPluggedIn = false;
 					boolean isError = true;
 					trayIcon.setImage(createCanvas(num_canvas, battery, isPluggedIn, isError));
@@ -422,7 +590,7 @@ public class BatteryTrayApp {
 	            
 	            //バッテリ100%のみ例外的に処理
 	            if(battery == 100) {
-	            	num_canvas = battery_100.clone();
+	            	num_canvas = FullBattery.clone();
 	            }
 	            else {
 	            	int tens_place = battery / 10, ones_place = battery % 10;
@@ -443,13 +611,13 @@ public class BatteryTrayApp {
         //バッテリ残量に応じて色を変更
         
         //電源接続時にはバッテリ残量をシアンで表示
-        if (isPluggedIn == true) g2d.setColor(Color.CYAN);
+        if (isPluggedIn == true) g2d.setColor(new Color(colorList[4][0], colorList[4][1], colorList[4][2]));
 		else if (isError == true) g2d.setColor(Color.RED);
         else {
-        	if (battery > 80) g2d.setColor(Color.GREEN);
-        	else if(battery > 50) g2d.setColor(Color.WHITE);
-        	else if (battery > 20) g2d.setColor(Color.YELLOW);
-        	else g2d.setColor(new Color(255, 143, 63));
+        	if (battery > 80) g2d.setColor(new Color(colorList[3][0], colorList[3][1], colorList[3][2]));
+        	else if(battery > 50) g2d.setColor(new Color(colorList[2][0], colorList[2][1], colorList[2][2]));
+        	else if (battery > 20) g2d.setColor(new Color(colorList[1][0], colorList[1][1], colorList[1][2]));
+        	else g2d.setColor(new Color(colorList[0][0], colorList[0][1], colorList[0][2]));
         }
         
 
