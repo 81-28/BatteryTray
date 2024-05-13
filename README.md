@@ -38,8 +38,11 @@ Java11.0.20.1で作成してます
   - Launch4jをインストール  
     以下のサイトからLaunch4jをインストールします。  
     [Install Launch4j](https://launch4j.sourceforge.net/ "Launch4j Home")  
-  - Launch4jの設定等はググったほうがわかりやすいです。 
-  - Restart the application after a crashはオフを推奨します。何かしらソフトにエラーがありうまく起動できない際、常に再実行され無駄に重くなるためです。
+  - exeにラッピング  
+  Launch4jの設定を済ませたら歯車マークを押しを押しConfigを保存します。保存と同時にラッピングが完了し、指定したディレクトリにexeが配置されます。
+    - Launch4jの設定等はググったほうがわかりやすいです。 
+>[!NOTE] 
+Restart the application after a crashはオフを推奨します。何かしらソフトにエラーがありうまく起動できない際、常に再実行され無駄に重くなるためです。
 ## 変更点
 ### 2024/05/12 v3.0
 - 各バッテリー残量に応じて文字色を自由に設定できるように変更
