@@ -34,7 +34,7 @@ Java11.0.20.1で作成してます
   ```shell:Terminal
   jar cvfe BatteryTrayApp.jar BatteryTrayApp BatteryTrayApp*.class
   ```
-### jarからexeにコンパイル
+### jarからexeにラッピング
   - Launch4jをインストール  
     以下のサイトからLaunch4jをインストールします。  
     [Install Launch4j](https://launch4j.sourceforge.net/ "Launch4j Home")  
